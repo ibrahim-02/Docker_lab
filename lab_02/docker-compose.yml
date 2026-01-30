@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  breast-cancer-api:
+    build: .
+    container_name: cancer-detect-ai
+    ports:
+      - "4000:4000"
+    restart: unless-stopped

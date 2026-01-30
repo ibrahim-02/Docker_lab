@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cancer Detect AI | Diagnostic Classifier</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #00f2ff;
+            --secondary: #ff006e;
+            --benign: #00ff88;
+            --malignant: #ff4444;
+            --bg-dark: #0f172a;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: radial-gradient(circle at top left, #1a1a2e, #16213e, #0f172a);
+            color: #e2e8f0;
+            margin: 0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -10%; left: -10%;
+            width: 40%; height: 40%;
+            background: radial-gradient(circle, var(--secondary), transparent 70%);
+            opacity: 0.15;
+            filter: blur(80px);
+            z-index: -1;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -10%; right: -10%;
+            width: 40%; height: 40%;
+            background: radial-gradient(circle, var(--primary), transparent 70%);
+            opacity: 0.15;
+            filter: blur(80px);
+            z-index: -1;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 3px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .feature-section { margin-bottom: 1.5rem; }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--glass-border);
+            letter-spacing: 2px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+        }
+
+        .input-group { position: relative; }
+
+        label {
+            display: block;
+            margin-bottom: 0.3rem;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-family: 'Roboto', sans-serif;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
+        }
+
+        button.submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        button.submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 242, 255, 0.3);
+        }
+
+        .result-container { text-align: center; display: none; }
+        .result-container.active { display: block; animation: fadeIn 0.5s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-badge {
+            display: inline-block;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+
+        .result-badge.benign {
+            background: rgba(0, 255, 136, 0.1);
+            border: 2px solid var(--benign);
+            color: var(--benign);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+        }
+
+        .result-badge.malignant {
+            background: rgba(255, 68, 68, 0.1);
+            border: 2px solid var(--malignant);
+            color: var(--malignant);
+            box-shadow: 0 0 30px rgba(255, 68, 68, 0.3);
+        }
+
+        .confidence-bar {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .confidence-fill { height: 100%; border-radius: 10px; transition: width 0.5s ease; }
+        .confidence-text { margin-top: 0.5rem; font-size: 0.9rem; color: #94a3b8; }
+
+        .spinner {
+            display: none;
+            width: 24px; height: 24px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .disclaimer { text-align: center; font-size: 0.75rem; color: #64748b; margin-top: 1rem; }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="glass-card">
+            <h1>🔬 CANCER DETECT AI</h1>
+            <p class="subtitle">Breast Cancer Diagnostic Classifier powered by Gradient Boosting</p>
+            
+            <form id="predictionForm">
+                <!-- Mean Features -->
+                <div class="feature-section">
+                    <div class="section-title">📊 Mean Features</div>
+                    <div class="feature-grid">
+                        <div class="input-group"><label>Radius</label><input type="number" name="mean_radius" step="0.01" placeholder="14.13" required></div>
+                        <div class="input-group"><label>Texture</label><input type="number" name="mean_texture" step="0.01" placeholder="19.26" required></div>
+                        <div class="input-group"><label>Perimeter</label><input type="number" name="mean_perimeter" step="0.01" placeholder="91.97" required></div>
+                        <div class="input-group"><label>Area</label><input type="number" name="mean_area" step="0.01" placeholder="654.89" required></div>
+                        <div class="input-group"><label>Smoothness</label><input type="number" name="mean_smoothness" step="0.0001" placeholder="0.096" required></div>
+                        <div class="input-group"><label>Compactness</label><input type="number" name="mean_compactness" step="0.0001" placeholder="0.104" required></div>
+                        <div class="input-group"><label>Concavity</label><input type="number" name="mean_concavity" step="0.0001" placeholder="0.089" required></div>
+                        <div class="input-group"><label>Concave Pts</label><input type="number" name="mean_concave_points" step="0.0001" placeholder="0.049" required></div>
+                        <div class="input-group"><label>Symmetry</label><input type="number" name="mean_symmetry" step="0.0001" placeholder="0.181" required></div>
+                        <div class="input-group"><label>Fractal Dim</label><input type="number" name="mean_fractal_dimension" step="0.0001" placeholder="0.063" required></div>
+                    </div>
+                </div>
+
+                <!-- Standard Error Features -->
+                <div class="feature-section">
+                    <div class="section-title">📈 Standard Error Features</div>
+                    <div class="feature-grid">
+                        <div class="input-group"><label>SE Radius</label><input type="number" name="se_radius" step="0.01" placeholder="0.405" required></div>
+                        <div class="input-group"><label>SE Texture</label><input type="number" name="se_texture" step="0.01" placeholder="1.216" required></div>
+                        <div class="input-group"><label>SE Perimeter</label><input type="number" name="se_perimeter" step="0.01" placeholder="2.866" required></div>
+                        <div class="input-group"><label>SE Area</label><input type="number" name="se_area" step="0.01" placeholder="40.34" required></div>
+                        <div class="input-group"><label>SE Smoothness</label><input type="number" name="se_smoothness" step="0.0001" placeholder="0.007" required></div>
+                        <div class="input-group"><label>SE Compactness</label><input type="number" name="se_compactness" step="0.0001" placeholder="0.025" required></div>
+                        <div class="input-group"><label>SE Concavity</label><input type="number" name="se_concavity" step="0.0001" placeholder="0.032" required></div>
+                        <div class="input-group"><label>SE Concave Pts</label><input type="number" name="se_concave_points" step="0.0001" placeholder="0.012" required></div>
+                        <div class="input-group"><label>SE Symmetry</label><input type="number" name="se_symmetry" step="0.0001" placeholder="0.021" required></div>
+                        <div class="input-group"><label>SE Fractal Dim</label><input type="number" name="se_fractal_dimension" step="0.0001" placeholder="0.004" required></div>
+                    </div>
+                </div>
+
+                <!-- Worst Features -->
+                <div class="feature-section">
+                    <div class="section-title">⚠️ Worst Features</div>
+                    <div class="feature-grid">
+                        <div class="input-group"><label>Worst Radius</label><input type="number" name="worst_radius" step="0.01" placeholder="16.27" required></div>
+                        <div class="input-group"><label>Worst Texture</label><input type="number" name="worst_texture" step="0.01" placeholder="25.68" required></div>
+                        <div class="input-group"><label>Worst Perimeter</label><input type="number" name="worst_perimeter" step="0.01" placeholder="107.26" required></div>
+                        <div class="input-group"><label>Worst Area</label><input type="number" name="worst_area" step="0.01" placeholder="880.58" required></div>
+                        <div class="input-group"><label>Worst Smoothness</label><input type="number" name="worst_smoothness" step="0.0001" placeholder="0.132" required></div>
+                        <div class="input-group"><label>Worst Compactness</label><input type="number" name="worst_compactness" step="0.0001" placeholder="0.254" required></div>
+                        <div class="input-group"><label>Worst Concavity</label><input type="number" name="worst_concavity" step="0.0001" placeholder="0.272" required></div>
+                        <div class="input-group"><label>Worst Concave Pts</label><input type="number" name="worst_concave_points" step="0.0001" placeholder="0.115" required></div>
+                        <div class="input-group"><label>Worst Symmetry</label><input type="number" name="worst_symmetry" step="0.0001" placeholder="0.290" required></div>
+                        <div class="input-group"><label>Worst Fractal Dim</label><input type="number" name="worst_fractal_dimension" step="0.0001" placeholder="0.084" required></div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <span id="btnText">🧬 ANALYZE SAMPLE</span>
+                    <div class="spinner" id="btnSpinner"></div>
+                </button>
+            </form>
+        </div>
+
+        <div id="resultArea" class="glass-card result-container">
+            <div id="resultBadge" class="result-badge"></div>
+            <div class="confidence-bar"><div id="confidenceFill" class="confidence-fill"></div></div>
+            <p class="confidence-text">Confidence: <span id="confidenceValue">0</span>%</p>
+            <p class="disclaimer">⚠️ This is a demonstration tool. Always consult medical professionals for diagnosis.</p>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#predictionForm').on('submit', function(event) {
+                event.preventDefault(); 
+                var $btn = $('.submit-btn'), $text = $('#btnText'), $spinner = $('#btnSpinner');
+                $text.hide(); $spinner.show(); $btn.css('opacity', '0.7');
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/predict',
+                    data: $(this).serialize(),
+                    dataType: 'json'
+                }).done(function(data) {
+                    var resultBadge = $('#resultBadge');
+                    var isBenign = data.predicted_class === 'Benign';
+                    resultBadge.text(data.predicted_class.toUpperCase());
+                    resultBadge.removeClass('benign malignant').addClass(isBenign ? 'benign' : 'malignant');
+                    $('#confidenceFill').css({ 'width': data.confidence + '%', 'background': isBenign ? '#00ff88' : '#ff4444' });
+                    $('#confidenceValue').text(data.confidence);
+                    $('#resultArea').addClass('active');
+                    $text.show(); $spinner.hide(); $btn.css('opacity', '1');
+                }).fail(function() {
+                    alert('ERROR: Analysis failed.');
+                    $text.show(); $spinner.hide(); $btn.css('opacity', '1');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
